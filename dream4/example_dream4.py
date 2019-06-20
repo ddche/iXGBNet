@@ -9,7 +9,7 @@ for i in range(1, 6):
     ko = pd.read_csv(file_ko).to_numpy()
 
     # Compute weights of gene regulatory network
-    vv = main(tm, 10, 2, 0.45, 1, ko)
+    vv = main(tm, 10, 2, 0.45, 1000, ko)
 
     # Export result
     df = pd.DataFrame(vv)
