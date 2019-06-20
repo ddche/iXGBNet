@@ -1,9 +1,7 @@
 from dream4.iXGBNet_dream4 import *
 import pandas as pd
 
-
 for i in range(1, 6):
-
     # Read data
     file_tm = "data/timeseries_data/insilico_size100_{}_timeseries.csv".format(i)
     tm = pd.read_csv(file_tm).to_numpy()
