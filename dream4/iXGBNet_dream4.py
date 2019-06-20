@@ -26,7 +26,7 @@ def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
     time_start = time.time()
 
     # normalize data_tm
-    data_tm = normalized_zscore(data_tm)
+    # data_tm = normalized_zscore(data_tm)
 
     # Compute the accumulation of previous time points for time series data.
     x, y = time_accumu(data_tm, sample_num, k, alpha)
