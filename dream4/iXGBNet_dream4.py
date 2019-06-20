@@ -26,7 +26,7 @@ def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
     time_start = time.time()
 
     # normalize data_tm
-    # data_tm = normalized_zscore(data_tm)
+    data_tm = normalized_zscore(data_tm)
 
     # Compute the accumulation of previous time points for time series data.
     x, y = time_accumu(data_tm, sample_num, k, alpha)
@@ -169,7 +169,6 @@ def xgboost_weight(x, y, subprob_num, iter_num):
 
             if i >= subprob_num - 1:
                 fea_num = num
-
             else:
                 if num < i:
                     fea_num = num
@@ -183,11 +182,12 @@ def xgboost_weight(x, y, subprob_num, iter_num):
 def normalized_zscore(x):
     # Normalize matrix by column with Z-score method.
     n = np.shape(x)[0]
+    m = np.shape(x)[1]
     x_std = np.std(x, axis=0, ddof=0)
-    beta = np.zeros((n, n))
-    w = np.zeros((n, n))
+    beta = np.zeros((n, m))
+    w = np.zeros((n, m))
     for i in range(n):
-        for j in range(n):
+        for j in range(m):
             beta[i, j] = sum(x[:, j]) / n
             w[i, j] = abs((x[i, j] - beta[i, j]) / x_std[j])
     return w
