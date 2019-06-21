@@ -5,6 +5,7 @@ import re
 import math
 import time
 
+
 def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
     """
     Inferring gene regulatory networks (GRNs) from gene expression data using an integrative XGBoost-based method.
@@ -26,7 +27,7 @@ def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
     time_start = time.time()
 
     # normalize data_tm
-    # data_tm = normalized_zscore(data_tm)
+    data_tm = normalized_zscore(data_tm, 0)
 
     # Compute the accumulation of previous time points for time series data.
     x, y = time_accumu(data_tm, sample_num, k, alpha)
@@ -37,7 +38,7 @@ def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
     vv = np.transpose(vv)
 
     # Integrate knockout data
-    vim = normalized_zscore(data_ko)
+    vim = normalized_zscore(data_ko, 0)
     vim = vv * vim
 
     # Normalize inferred GRN matrix by row with L2-norm method.
@@ -179,11 +180,12 @@ def xgboost_weight(x, y, subprob_num, iter_num):
     return vim
 
 
-def normalized_zscore(x):
+def normalized_zscore(x, ddof=0):
     # Normalize matrix by column with Z-score method.
+    # axis: 1(无偏估计)，0(有偏估计)
     n = np.shape(x)[0]
     m = np.shape(x)[1]
-    x_std = np.std(x, axis=0, ddof=0)
+    x_std = np.std(x, axis=0, ddof=ddof)
     beta = np.zeros((n, m))
     w = np.zeros((n, m))
     for i in range(n):
