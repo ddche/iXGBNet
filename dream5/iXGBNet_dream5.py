@@ -5,18 +5,14 @@ import re
 import math
 import time
 
-def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
+def main(data_ss, iter_num):
     """
     Inferring gene regulatory networks (GRNs) from gene expression data using an integrative XGBoost-based method.
 
     Args:
 
-        data_tm: Time-series experimental data.
-        sample_num: Number of time-series experimental's samples.
-        k: Previous k time points.
-        alpha: Decay factor.
+        data_ss: Steady-state experimental data.
         iter_num: Number of iterations in XGBoost model.
-        data_ko: Knockout experimental data.
 
     Returns:
 
@@ -25,23 +21,13 @@ def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
     """
     time_start = time.time()
 
-    # normalize data_tm
-    data_tm = normalized_zscore(data_tm)
-
-    # Compute the accumulation of previous time points for time series data.
-    x, y = time_accumu(data_tm, sample_num, k, alpha)
-
     # Compute the weights of gene regulatory network using XGBoost.
-    feature_num = np.shape(data_tm)[1]
-    vv = xgboost_weight(x, y, feature_num, iter_num)
+    feature_num = np.shape(data_ss)[1]
+    vv = xgboost_weight(data_ss, feature_num, iter_num)
     vv = np.transpose(vv)
 
-    # Integrate knockout data
-    vim = normalized_zscore(data_ko)
-    vim = vv * vim
-
     # Normalize inferred GRN matrix by row with L2-norm method.
-    vim = normalized_l2norm(vim)
+    vim = normalized_l2norm(vv)
 
     # Use a statistical technology to refine the inferred GRN.
     statis = statistical_method(vim)
@@ -54,66 +40,13 @@ def main(data_tm, sample_num, k, alpha, iter_num, data_ko):
     return vim
 
 
-def time_accumu(data, sample_num, k, alpha):
-    """
-    Compute the accumulation of previous time points for time series data.
-
-    Args:
-
-        data: Time-series experimental data.
-        sample_num: Number of samples.
-        k: previous k time points.
-        alpha: decay factor.
-
-    Returns:
-
-        matrixx: Training data after accumulating several time points.
-        matrixy: Label of the training data after accumulating several time points.
-
-    """
-    m = int(np.shape(data)[0] / sample_num)
-    k = k + 1
-    data1 = data
-    matrixx = np.ones(((m - k + 1) * sample_num, np.shape(data)[1]))
-    matrixy = np.ones(((m - k + 1) * sample_num, np.shape(data)[1]))
-
-    for t in range(np.shape(data)[1]):
-        data = data1[:, t]
-        wwx = []
-        wwy = []
-        matx = np.ones(((m - k + 1) * sample_num, 1))
-        maty = np.ones(((m - k + 1) * sample_num, 1))
-
-        for j in range(sample_num):
-            x = []
-            w = []
-            XX = 0
-            for i in range(k):
-                x.append(range(k - i - 1 + 21 * j, m - i + 21 * j))
-                w.append(pow(alpha, i))
-            w = w[0:k - 1]
-            for i in range(1, k):
-                X = w[i - 1] * data[x[i]]
-                XX = XX + X
-            Y = data[x[0]]
-            wwx.append(XX)
-            matx[(m - k + 1) * j:(m - k + 1) * j + (m - k + 1)] = wwx[j].reshape((m - k + 1), 1)
-            wwy.append(Y)
-            maty[(m - k + 1) * j:(m - k + 1) * j + (m - k + 1)] = wwy[j].reshape((m - k + 1), 1)
-        matrixx[:, t] = matx.reshape((m - k + 1) * sample_num, )
-        matrixy[:, t] = maty.reshape((m - k + 1) * sample_num, )
-
-    return matrixx, matrixy
-
-
-def xgboost_weight(x, y, subprob_num, iter_num):
+def xgboost_weight(data, subprob_num, iter_num):
     """
     Compute the weights of gene regulatory network using XGBoost.
 
     Args:
 
-        x: training data.
-        y: Label of the training data.
+        data: Experimental data.
         subprob_num: Number of subproblems.
         iter_num: Number of iterations.
 
@@ -122,15 +55,14 @@ def xgboost_weight(x, y, subprob_num, iter_num):
         vim: The matrix recording the weights of regulatory network after using XGBoost.
 
     """
-    data = x
-    d_size = data.shape
-    vim = np.zeros((d_size[1], subprob_num)).tolist()  # vim: weights of Regulatory network
 
-    for i in range(0, d_size[1]):
+    vim = np.zeros((data.shape[1], subprob_num)).tolist()  # vim: weights of Regulatory network
+    for i in range(0, data.shape[1]):
         print("----------------------------------------------------------------", i,
               "----------------------------------------------------------------")
 
-        y1 = y[:, i].reshape(d_size[0], 1)
+        # split train and test data set
+        y = data[:, i]
         if i == 0:
             x = data[:, 1:subprob_num]
         elif i < subprob_num:
@@ -140,19 +72,19 @@ def xgboost_weight(x, y, subprob_num, iter_num):
 
         # Build model
         params = {
+
             'booster': 'gbtree',
             'gamma': 0.2,
             'max_depth': 4,
             'min_child_weight': 4,
-            'alpha': 0,
-            'lambda': 0,
+            'lambda': 1,
             'subsample': 0.7,
             'colsample_bytree': 0.9,
             'silent': 1,
             'eta': 0.0008
         }
 
-        dtrain = xgb.DMatrix(x, y1)
+        dtrain = xgb.DMatrix(x, y)
         plst = params.items()
         model = xgb.train(plst, dtrain, iter_num)
 
@@ -166,31 +98,18 @@ def xgboost_weight(x, y, subprob_num, iter_num):
             num = np.array(num)
             num = np.core.defchararray.strip(num, '()')
             num = int(num)
-
             if i >= subprob_num - 1:
                 fea_num = num
+
             else:
                 if num < i:
                     fea_num = num
                 else:
                     fea_num = num + 1
+
             vim[i][fea_num] = importance[j][1]
 
     return vim
-
-
-def normalized_zscore(x):
-    # Normalize matrix by column with Z-score method.
-    n = np.shape(x)[0]
-    m = np.shape(x)[1]
-    x_std = np.std(x, axis=0, ddof=0)
-    beta = np.zeros((n, m))
-    w = np.zeros((n, m))
-    for i in range(n):
-        for j in range(m):
-            beta[i, j] = sum(x[:, j]) / n
-            w[i, j] = abs((x[i, j] - beta[i, j]) / x_std[j])
-    return w
 
 
 def normalized_l2norm(x):
