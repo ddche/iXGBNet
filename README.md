@@ -17,8 +17,10 @@ Now, we give a code example in two data sets, dream4 and dream5, respectively.
       tm = pd.read_csv(file_tm).to_numpy()
       file_ko = "data/knockout_data/insilico_size100_{}_knockout.csv".format(i)
       ko = pd.read_csv(file_ko).to_numpy()
+      
       # Compute weights of gene regulatory network
       vv = main(tm, 10, 2, 0.45, 1000, ko)
+      
       # Export result
       df = pd.DataFrame(vv)
       df.to_csv("result/dream4_d{}.csv".format(i), index=False)
@@ -36,8 +38,10 @@ Now, we give a code example in two data sets, dream4 and dream5, respectively.
         # Read data
         file_ss = "data/steadystate_data/dream5_net{}_steadystate.csv".format(i)
         data_ss = pd.read_csv(file_ss).to_numpy()
+        
         # Compute weights of gene regulatory network
         vv = main(data_ss, 1000)
+        
         # Export result
         df = pd.DataFrame(vv)
         df.to_csv("result/dream5_d{}.csv".format(i), index=False)
