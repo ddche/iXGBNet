@@ -100,13 +100,11 @@ def xgboost_weight(data, subprob_num, iter_num):
             num = int(num)
             if i >= subprob_num - 1:
                 fea_num = num
-
             else:
                 if num < i:
                     fea_num = num
                 else:
                     fea_num = num + 1
-
             vim[i][fea_num] = importance[j][1]
 
     return vim
