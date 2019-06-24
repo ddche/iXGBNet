@@ -81,7 +81,6 @@ def time_accumu(data, sample_num, k, alpha):
         wwy = []
         matx = np.ones(((m - k + 1) * sample_num, 1))
         maty = np.ones(((m - k + 1) * sample_num, 1))
-
         for j in range(sample_num):
             x = []
             w = []
@@ -127,7 +126,6 @@ def xgboost_weight(x, y, subprob_num, iter_num):
     for i in range(0, d_size[1]):
         print("----------------------------------------------------------------", i,
               "----------------------------------------------------------------")
-
         y1 = y[:, i].reshape(d_size[0], 1)
         if i == 0:
             x = data[:, 1:subprob_num]
@@ -164,7 +162,6 @@ def xgboost_weight(x, y, subprob_num, iter_num):
             num = np.array(num)
             num = np.core.defchararray.strip(num, '()')
             num = int(num)
-
             if i >= subprob_num - 1:
                 fea_num = num
             else:
